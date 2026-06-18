@@ -1,6 +1,5 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-import plotly.express as px
 import matplotlib.pyplot as plt
 
 fig = px.histogram(df, x="Income_Category", color="Churn", barmode="group")
