@@ -1,9 +1,6 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
 
-fig = px.histogram(df, x="Income_Category", color="Churn", barmode="group")
-st.plotly_chart(fig)
 # -----------------------
 # Page Configuration
 # -----------------------
