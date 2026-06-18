@@ -1,0 +1,8 @@
+Bank-Churn-Project
+│
+├── data
+├── notebooks
+├── streamlit
+├── models
+├── powerbi
+└── reports
