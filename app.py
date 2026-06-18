@@ -1,5 +1,10 @@
 import streamlit as st
-import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.express as px
+import matplotlib.pyplot as plt
+
+fig = px.histogram(df, x="Income_Category", color="Churn", barmode="group")
+st.plotly_chart(fig)
 # -----------------------
 # Page Configuration
 # -----------------------
