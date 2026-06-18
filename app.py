@@ -1,8 +1,11 @@
 import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
 # -----------------------
-# Page Configuration
+# Page Config
 # -----------------------
 st.set_page_config(
     page_title="Bank Customer Churn Dashboard",
@@ -11,15 +14,16 @@ st.set_page_config(
 )
 
 # -----------------------
-# Load Dataset
+# Load Dataset (FIXED PATH)
 # -----------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("BankChurners.csv")
+    file_path = os.path.join(os.path.dirname(__file__), "BankChurners.csv")
+    df = pd.read_csv(file_path)
 
     df["Churn"] = df["Attrition_Flag"].map({
-        "Existing Customer":0,
-        "Attrited Customer":1
+        "Existing Customer": 0,
+        "Attrited Customer": 1
     })
 
     return df
@@ -27,38 +31,20 @@ def load_data():
 df = load_data()
 
 # -----------------------
-# Dashboard Title
+# Title
 # -----------------------
-
 st.title("🏦 Bank Customer Churn Analytics Dashboard")
-
-st.markdown("### Business Intelligence | Customer Retention | Data Analytics")
-
+st.markdown("### Business Intelligence | Customer Retention | Analytics")
 st.divider()
 
 # -----------------------
 # Sidebar Filters
 # -----------------------
+st.sidebar.header("🔎 Filters")
 
-st.sidebar.header("🔎 Filter Customers")
-
-gender = st.sidebar.multiselect(
-    "Gender",
-    options=df["Gender"].unique(),
-    default=df["Gender"].unique()
-)
-
-income = st.sidebar.multiselect(
-    "Income Category",
-    options=df["Income_Category"].unique(),
-    default=df["Income_Category"].unique()
-)
-
-card = st.sidebar.multiselect(
-    "Card Category",
-    options=df["Card_Category"].unique(),
-    default=df["Card_Category"].unique()
-)
+gender = st.sidebar.multiselect("Gender", df["Gender"].unique(), df["Gender"].unique())
+income = st.sidebar.multiselect("Income Category", df["Income_Category"].unique(), df["Income_Category"].unique())
+card = st.sidebar.multiselect("Card Category", df["Card_Category"].unique(), df["Card_Category"].unique())
 
 filtered_df = df[
     (df["Gender"].isin(gender)) &
@@ -66,135 +52,82 @@ filtered_df = df[
     (df["Card_Category"].isin(card))
 ]
 
-
 # -----------------------
-# KPI Cards
+# KPI Metrics
 # -----------------------
+col1, col2, col3, col4 = st.columns(4)
 
-total_customers = len(filtered_df)
-churn_rate = filtered_df["Churn"].mean() * 100
-avg_age = filtered_df["Customer_Age"].mean()
-avg_credit = filtered_df["Credit_Limit"].mean()
-total_transactions = filtered_df["Total_Trans_Amt"].sum()
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-col1.metric("👥 Customers", f"{total_customers:,}")
-
-col2.metric("📉 Churn Rate", f"{churn_rate:.2f}%")
-
-col3.metric("🎂 Avg Age", f"{avg_age:.1f}")
-
-col4.metric("💳 Avg Credit", f"${avg_credit:,.0f}")
-
-col5.metric("💰 Transactions", f"${total_transactions:,.0f}")
+col1.metric("👥 Customers", len(filtered_df))
+col2.metric("📉 Churn Rate", f"{filtered_df['Churn'].mean()*100:.2f}%")
+col3.metric("🎂 Avg Age", f"{filtered_df['Customer_Age'].mean():.1f}")
+col4.metric("💳 Avg Credit", f"${filtered_df['Credit_Limit'].mean():,.0f}")
 
 st.divider()
 
-
 # -----------------------
-# Row 2 Charts
+# Charts Row 1
 # -----------------------
+col1, col2 = st.columns(2)
 
-col3, col4 = st.columns(2)
-
-with col3:
-
-    st.subheader("💰 Income Category vs Churn")
-
-    fig, ax = plt.subplots(figsize=(7,4))
-
-    sns.barplot(
-        x="Income_Category",
-        y="Churn",
-        data=filtered_df,
-        palette="viridis",
-        ax=ax
-    )
-
-    plt.xticks(rotation=45)
-
+with col1:
+    st.subheader("📊 Churn Distribution")
+    fig, ax = plt.subplots()
+    sns.countplot(x="Attrition_Flag", data=filtered_df, ax=ax)
+    plt.xticks(rotation=10)
     st.pyplot(fig)
 
-
-with col4:
-
-    st.subheader("💳 Card Category vs Churn")
-
-    fig, ax = plt.subplots(figsize=(6,4))
-
-    sns.barplot(
-        x="Card_Category",
-        y="Churn",
-        data=filtered_df,
-        palette="rocket",
-        ax=ax
-    )
-
+with col2:
+    st.subheader("👨 Gender vs Churn")
+    fig, ax = plt.subplots()
+    sns.barplot(x="Gender", y="Churn", data=filtered_df, ax=ax)
     st.pyplot(fig)
 
 st.divider()
 
 # -----------------------
-# Row 3 Charts
+# Charts Row 2
 # -----------------------
+col1, col2 = st.columns(2)
 
-col5, col6 = st.columns(2)
-
-with col5:
-    st.subheader("🎂 Customer Age Distribution")
-
-    fig, ax = plt.subplots(figsize=(6,4))
+with col1:
+    st.subheader("🎂 Age Distribution")
+    fig, ax = plt.subplots()
     sns.histplot(filtered_df["Customer_Age"], bins=20, kde=True, ax=ax)
-
     st.pyplot(fig)
 
-with col6:
+with col2:
     st.subheader("💳 Credit Limit Distribution")
-
-    fig, ax = plt.subplots(figsize=(6,4))
+    fig, ax = plt.subplots()
     sns.histplot(filtered_df["Credit_Limit"], bins=20, kde=True, ax=ax)
-
     st.pyplot(fig)
 
 st.divider()
 
 # -----------------------
-# Correlation Heatmap
+# Heatmap
 # -----------------------
-
 st.subheader("🔥 Correlation Heatmap")
 
 numeric_df = filtered_df.select_dtypes(include=["int64", "float64"])
 
-fig, ax = plt.subplots(figsize=(12,7))
-
-sns.heatmap(
-    numeric_df.corr(),
-    cmap="coolwarm",
-    annot=False,
-    ax=ax
-)
+fig, ax = plt.subplots(figsize=(10,5))
+sns.heatmap(numeric_df.corr(), cmap="coolwarm", ax=ax)
 
 st.pyplot(fig)
 
 st.divider()
 
-
 # -----------------------
-# Dataset Preview
+# Data Preview
 # -----------------------
-
-st.subheader("📋 Filtered Customer Data")
-
+st.subheader("📋 Data Table")
 st.dataframe(filtered_df)
 
 csv = filtered_df.to_csv(index=False).encode("utf-8")
 
 st.download_button(
-    label="📥 Download Filtered Data",
-    data=csv,
-    file_name="Filtered_Bank_Customers.csv",
-    mime="text/csv"
+    "📥 Download Data",
+    csv,
+    "filtered_data.csv",
+    "text/csv"
 )
-
